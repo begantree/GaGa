@@ -1,0 +1,92 @@
+.compass-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vmin;
+    /* Scale to 80% of smaller screen dimension */
+    height: 80vmin;
+    z-index: 450;
+    /* As requested: above map (200-400), below UI */
+    pointer-events: none;
+    /* Allow map interaction through the compass */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.compass-plate {
+    width: 100%;
+    height: 100%;
+    transition: none;
+    /* Remove CSS transition to rely on React state 1:1 for sync with text */
+}
+
+.compass-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.2));
+}
+
+.compass-text {
+    font-size: 12px;
+    font-weight: bold;
+    fill: #333;
+}
+
+
+
+/* Golden Birth Marker */
+@keyframes goldPulse {
+    0% {
+        stroke-width: 5;
+        opacity: 0.6;
+    }
+
+    50% {
+        stroke-width: 15;
+        opacity: 0.3;
+    }
+
+    100% {
+        stroke-width: 5;
+        opacity: 0.6;
+    }
+}
+
+.glowing-circle {
+    /* Leaflet applies this to SVG path */
+    animation: goldPulse 2s infinite;
+    transform-origin: center;
+    box-shadow: 0 0 20px gold;
+    /* Not effective on SVG path usually, filter is better */
+    filter: drop-shadow(0 0 5px gold);
+}
+
+.compass-golden-target {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    border: 2px solid gold;
+    border-radius: 50%;
+    box-shadow: 0 0 15px gold;
+    animation: goldPulse 1.5s infinite;
+    z-index: 1001;
+    /* Above map */
+    pointer-events: none;
+}
+
+.compass-golden-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    background: gold;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
