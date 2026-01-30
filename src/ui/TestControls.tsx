@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { useLogicEngine } from '../logics/useLogicEngine';
-import { MapPin, Navigation, RefreshCw, Lock } from 'lucide-react'; // Removed Layers
+import { MapPin, Navigation, RefreshCw, Lock, List, Trash2, User, X } from 'lucide-react';
 
 export const TestControls = () => {
     // Unused: setting, updateSettings
-    const { center, gpsPosition, currentTime, setHeading, setCenter, setGpsPosition, setCurrentTime, users, activeUserId, addUser, setActiveUser, setIsInputtingUser, isGPSTracking, setGPSTracking, isScaleLocked, setScaleLocked } = useStore();
+    const { center, gpsPosition, currentTime, setHeading, setCenter, setGpsPosition, setCurrentTime, users, activeUserId, addUser, removeUser, setActiveUser, setIsInputtingUser, isGPSTracking, setGPSTracking, isScaleLocked, setScaleLocked } = useStore();
     const { solarData, result } = useLogicEngine(); // Get entire result 
 
     // Unused: languageMode
@@ -130,8 +130,8 @@ export const TestControls = () => {
     }, [users, activeUserId, center]);
 
     // UI State for Registration
-    // const [showUserList, setShowUserList] = useState(false); // Removed: List is always exposed
     const [isRegExpanded, setIsRegExpanded] = useState(false); // Collapsible Registration Form
+    const [showUserListPopup, setShowUserListPopup] = useState(false);
 
     // Detailed New User State
     const now = new Date();
@@ -164,6 +164,7 @@ export const TestControls = () => {
 
     const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const solarTimeString = solarData?.trueSolarTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const activeUser = users.find(u => u.id === activeUserId);
 
     // GPS Handler
     const handleGPS = () => {
@@ -271,11 +272,26 @@ export const TestControls = () => {
 
             {/* 4. Registration Form (Expanded) */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px 15px', background: '#fafafa' }}>
-                <div onClick={() => setIsRegExpanded(!isRegExpanded)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', cursor: 'pointer' }}>
-                    <h4 style={{ margin: 0, fontSize: '12px', color: '#333' }}>User List & Registration</h4>
-                    <button style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #ddd', background: '#fff' }}>
-                        {isRegExpanded ? 'Hide Form' : '+ Add New'}
-                    </button>
+                {/* Modified Header: Active User & List Icon */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 10px', background: '#e3f2fd', borderRadius: '8px',
+                    marginBottom: '10px', border: '1px solid #bbdefb'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={16} color="#1976d2" />
+                        <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#0d47a1' }}>
+                            {activeUser ? activeUser.name : 'Guest User'}
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button onClick={() => setIsRegExpanded(!isRegExpanded)} style={{ fontSize: '10px', padding: '4px 8px', background: '#fff', border: '1px solid #bbdefb', borderRadius: '12px', color: '#1976d2' }}>
+                            {isRegExpanded ? 'Close Form' : '+ New'}
+                        </button>
+                        <button onClick={() => setShowUserListPopup(true)} style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer' }}>
+                            <List size={20} color="#1565c0" />
+                        </button>
+                    </div>
                 </div>
 
                 {isRegExpanded && (
@@ -343,26 +359,57 @@ export const TestControls = () => {
                 )}
 
                 {/* 5. User List (Always Visible) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {users.map(u => (
-                        <div key={u.id} onClick={() => setActiveUser(u.id)}
-                            style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '10px', borderRadius: '8px',
-                                border: activeUserId === u.id ? '1px solid #2196f3' : '1px solid #eee',
-                                background: activeUserId === u.id ? '#e3f2fd' : 'white',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <div>
-                                <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{u.name}</div>
-                                <div style={{ fontSize: '11px', color: '#666' }}>{new Date(u.birthDate).toLocaleDateString()} {new Date(u.birthDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                {/* 5. Logic Popup: User List */}
+                {showUserListPopup && (
+                    <>
+                        <div style={{
+                            position: 'fixed', bottom: '0', left: '0', right: '0',
+                            background: 'white', borderTopLeftRadius: '16px', borderTopRightRadius: '16px',
+                            zIndex: 2000, maxHeight: '70vh', display: 'flex', flexDirection: 'column',
+                            boxShadow: '0 -4px 20px rgba(0,0,0,0.2)'
+                        }}>
+                            <div style={{ padding: '15px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0, fontSize: '16px' }}>User List</h3>
+                                <button onClick={() => setShowUserListPopup(false)} style={{ background: 'none', border: 'none' }}><X size={20} /></button>
                             </div>
-                            {activeUserId === u.id && <div style={{ fontSize: '10px', color: '#2196f3', fontWeight: 'bold' }}>ACTIVE</div>}
+
+                            <div style={{ padding: '10px 15px', overflowY: 'auto' }}>
+                                {users.map(u => (
+                                    <div key={u.id} onClick={() => { setActiveUser(u.id); setShowUserListPopup(false); }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '12px', borderRadius: '8px', marginBottom: '8px',
+                                            border: activeUserId === u.id ? '2px solid #2196f3' : '1px solid #eee',
+                                            background: activeUserId === u.id ? '#e3f2fd' : 'white',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <div>
+                                            <div style={{ fontWeight: 'bold', fontSize: '14px', color: activeUserId === u.id ? '#1565c0' : '#333' }}>{u.name}</div>
+                                            <div style={{ fontSize: '11px', color: '#666' }}>
+                                                {new Date(u.birthDate).toLocaleDateString()} {new Date(u.birthDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+
+                                        <button onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Delete user ${u.name}?`)) removeUser(u.id);
+                                        }} style={{ padding: '8px', background: '#ffebee', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
+                                            <Trash2 size={16} color="#c62828" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {users.length === 0 && <div style={{ textAlign: 'center', padding: '30px', color: '#999' }}>No Users Found</div>}
+
+                                <button onClick={() => { setShowUserListPopup(false); setIsRegExpanded(true); }}
+                                    style={{ width: '100%', padding: '12px', background: '#f5f5f5', border: '1px dashed #ccc', borderRadius: '8px', color: '#666', marginTop: '10px' }}>
+                                    + Add New User
+                                </button>
+                            </div>
                         </div>
-                    ))}
-                    {users.length === 0 && <div style={{ textAlign: 'center', padding: '20px', color: '#999', fontSize: '12px' }}>No Users Registered</div>}
-                </div>
+                        <div onClick={() => setShowUserListPopup(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1999, background: 'rgba(0,0,0,0.5)' }} />
+                    </>
+                )}
             </div>
         </div>
     );

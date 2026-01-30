@@ -30,6 +30,7 @@ interface AppState {
   setZoom: (zoom: number) => void;
 
   addUser: (user: UserProfile) => void;
+  removeUser: (id: string) => void;
   setActiveUser: (id: string) => void;
   updateSettings: (settings: Partial<LogicSettings>) => void;
 
@@ -82,6 +83,16 @@ export const useStore = create<AppState>((set) => ({
     settings: { ...state.settings, ...newSettings }
   })),
 
+  removeUser: (id) => set((state) => {
+    const newUsers = state.users.filter(u => u.id !== id);
+    // If active user is deleted, pick first or null
+    const newActiveId = (state.activeUserId === id)
+      ? (newUsers[0]?.id || null)
+      : state.activeUserId;
+    return { users: newUsers, activeUserId: newActiveId };
+  }),
+
+  // UI State
   isInputtingUser: false,
   setIsInputtingUser: (isInputting) => set({ isInputtingUser: isInputting }),
   isGPSTracking: false, // Default DISABLED to prevent map fighting
