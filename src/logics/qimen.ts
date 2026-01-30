@@ -285,7 +285,13 @@ export const calculateQimen: LogicFunction = (input: LogicInput) => {
         sectorAgitation[dir] = { jitter: agitation, power: power };
 
         // --- E. Visual Segments Setup ---
-        // (Existing Logic)
+        // State Philosophy Implementation
+        // Open Level: 0.0 ~ 1.0 (Based on score 40~100)
+        const openLevel = Math.max(0, Math.min(1, (dScore - 40) / 60));
+        const isOpen = openLevel > 0.3; // Threshold for "The Door is Open"
+        const activeWidth = 20 + (openLevel * 25); // Min 20, Max 45 degrees
+
+        // Pattern Check
         let pattern: 'gil' | 'hyung' | null = null;
         if (isGoodDoor && !isGongmang && !isChung) pattern = 'gil';
         if (dScore < 40) pattern = 'hyung'; // Sync visual flag with new score
@@ -298,7 +304,12 @@ export const calculateQimen: LogicFunction = (input: LogicInput) => {
             angleStart: startAngle,
             angleEnd: endAngle,
             isAus: isGoodDoor,
-            description: reasons.join(', ')
+            description: reasons.join(', '),
+            state: {
+                isOpen,
+                openLevel,
+                activeWidth
+            }
         });
 
         starSegments.push({

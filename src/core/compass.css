@@ -90,3 +90,40 @@
     border-radius: 50%;
     transform: translate(-50%, -50%);
 }
+
+/* Open Door Focus Message */
+.open-door-notice {
+    position: absolute;
+    top: 50px;
+    /* Below Top controls */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 10px 24px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 251, 0, 0.444);
+    color: #e6c300;
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    z-index: 1002;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    animation: fadeInSlideDown 0.4s ease-out;
+    letter-spacing: -0.02em;
+    pointer-events: none;
+}
+
+@keyframes fadeInSlideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}

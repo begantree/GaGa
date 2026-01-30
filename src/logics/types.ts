@@ -45,6 +45,12 @@ export interface RingSegment {
     color?: string; // Optional highlight
     isAus: boolean; // Auspicious? (For sizing 120%)
     description?: string;
+    // New: State Philosophy
+    state?: {
+        isOpen: boolean;
+        openLevel: number; // 0.0 ~ 1.0 (Strength)
+        activeWidth?: number; // Visual width
+    };
 }
 
 export interface RingLayer {

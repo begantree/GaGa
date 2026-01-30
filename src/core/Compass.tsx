@@ -34,6 +34,15 @@ export const Compass = () => {
     const { qimen, myeongri } = result;
     const totalRotation = heading + MAG_DECLINATION;
 
+    // --- Active Door Focus Message ---
+    // Detect which sector is at the top (12 o'clock)
+    const facingAngle = ((-totalRotation % 360) + 360) % 360;
+    const facingIdx = Math.floor(((facingAngle + 22.5) % 360) / 45) % 8;
+    const doorRing = qimen.rings.find(r => r.id === 'doors');
+    const facingDoor = doorRing?.segments.find(s => Math.abs(s.angleStart - facingIdx * 45) < 1);
+    const isFacingOpen = facingDoor?.state?.isOpen && (facingDoor?.state?.openLevel || 0) > 0.5;
+    const facingDoorName = facingDoor?.label || '';
+
     // --- Dynamic Center Radius Calculation ---
     const rawName = (myeongri.summary || 'Guest').split('(')[0].replace('User: ', '').replace('Guest Mode', 'Guest');
     const centerRadius = Math.max(6, (6 + rawName.length * 1.5) * 0.7);
@@ -41,12 +50,20 @@ export const Compass = () => {
 
     return (
         <div className="compass-container" style={{ pointerEvents: 'none' }}>
+            {isFacingOpen && (
+                <div className="open-door-notice">
+                    지금은 {facingDoorName}을 써도 되는 시간입니다
+                </div>
+            )}
             <div className="compass-plate" style={{ transform: `rotate(${totalRotation}deg)` }}>
                 <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }}>
                     <defs>
                         <pattern id="gongmang-hatch" patternUnits="userSpaceOnUse" width="1.5" height="1.5" patternTransform="rotate(45)">
                             <line x1="0" y1="0" x2="0" y2="1.5" stroke="rgba(0,0,0,0.4)" strokeWidth="0.6" />
                         </pattern>
+                        <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="1.2" result="blur" />
+                        </filter>
                     </defs>
 
                     {/* 100% Border Guide (Removed as per request for cleaner look) */}
@@ -59,30 +76,21 @@ export const Compass = () => {
 
                         const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
-                        // DYNAMIC SCORE SYNC
-                        // Fetch the EXACT score calculated by the new engine
+                        // --- A. Identify Components ---
+                        const flags = qimen.palaceFlags?.[i];
+                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
+                        const doorName = doorSeg?.label || '';
+
+                        // --- B. Dynamic Score & Jitter ---
                         const scoreFromEngine = qimen.sectorScores ? qimen.sectorScores[dirs[i]] : 0;
                         const agit = qimen.sectorAgitation ? qimen.sectorAgitation[dirs[i]] : { jitter: 1.0, power: 2.5 };
 
-                        // --- Dynamic Score Sync (Living Jitter) ---
-                        // Calculate jitter FIRST to apply to radius
                         const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
                         const microFactor = (tDate.getMinutes() * 60 + tDate.getSeconds()) / 3600;
-
-                        // WuXing Jitter: Frq controlled by agit.jitter, Amp by agit.power
                         const jitter = Math.sin(microFactor * Math.PI * 8 * agit.jitter + i) * agit.power;
+                        const finalScore = Math.min(100, Math.max(0, scoreFromEngine + jitter));
 
-                        // Base Total + Jitter
-                        // The engine provides the base score (0-100). We just add jitter.
-                        let baseTotal = scoreFromEngine;
-
-                        // Final Score for Scaling (Clamped 0-100)
-                        const finalScore = Math.min(100, Math.max(0, baseTotal + jitter));
-
-                        // Piecewise Scaling Logic (Boosted)
-                        // 60 -> 1.0
-                        // 100 -> 1.25 (User wanted distinct 'over 20%')
-                        // 30 -> 0.7
+                        // --- C. Scaling & Radius ---
                         let scaling = 1.0;
                         if (finalScore >= 60) {
                             scaling = 1.0 + ((finalScore - 60) / 40) * 0.25;
@@ -92,7 +100,24 @@ export const Compass = () => {
                         }
                         const currentR = baseOuterR * scaling;
 
-                        // Points
+                        // --- D. Dynamic Spread Logic (State Philosophy) ---
+                        const sWidth = doorSeg?.state?.activeWidth || 20;
+                        const midA = (startA + endA) / 2;
+                        const sStart = midA - sWidth / 2;
+                        const sEnd = midA + sWidth / 2;
+
+                        const sx1 = 50 + centerRadius * Math.cos(toRad(sStart));
+                        const sy1 = 50 + centerRadius * Math.sin(toRad(sStart));
+                        const sx2 = 50 + currentR * Math.cos(toRad(sStart));
+                        const sy2 = 50 + currentR * Math.sin(toRad(sStart));
+                        const sx3 = 50 + currentR * Math.cos(toRad(sEnd));
+                        const sy3 = 50 + currentR * Math.sin(toRad(sEnd));
+                        const sx4 = 50 + centerRadius * Math.cos(toRad(sEnd));
+                        const sy4 = 50 + centerRadius * Math.sin(toRad(sEnd));
+
+                        const spreadPath = `M ${sx1} ${sy1} L ${sx2} ${sy2} A ${currentR} ${currentR} 0 0 1 ${sx3} ${sy3} L ${sx4} ${sy4} A ${centerRadius} ${centerRadius} 0 0 0 ${sx1} ${sy1} Z`;
+
+                        // --- E. Standard Points (45deg Guide) ---
                         const ox1 = 50 + currentR * Math.cos(toRad(startA));
                         const oy1 = 50 + currentR * Math.sin(toRad(startA));
                         const ox2 = 50 + currentR * Math.cos(toRad(endA));
@@ -102,6 +127,18 @@ export const Compass = () => {
                         const ix2 = 50 + centerRadius * Math.cos(toRad(endA));
                         const iy2 = 50 + centerRadius * Math.sin(toRad(endA));
 
+                        // --- F. Core Signal Path (Thin center line) ---
+                        const cx1 = 50 + centerRadius * Math.cos(toRad(midA - 0.5));
+                        const cy1 = 50 + centerRadius * Math.sin(toRad(midA - 0.5));
+                        const cx2 = 50 + currentR * Math.cos(toRad(midA - 0.5));
+                        const cy2 = 50 + currentR * Math.sin(toRad(midA - 0.5));
+                        const cx3 = 50 + currentR * Math.cos(toRad(midA + 0.5));
+                        const cy3 = 50 + currentR * Math.sin(toRad(midA + 0.5));
+                        const cx4 = 50 + centerRadius * Math.cos(toRad(midA + 0.5));
+                        const cy4 = 50 + centerRadius * Math.sin(toRad(midA + 0.5));
+                        const corePath = `M ${cx1} ${cy1} L ${cx2} ${cy2} L ${cx3} ${cy3} L ${cx4} ${cy4} Z`;
+
+                        // --- G. Color & Status Logic ---
                         let bg;
                         if (finalScore >= 90) bg = 'rgba(255, 215, 0, 0.45)';
                         else if (finalScore >= 75) bg = 'rgba(46, 125, 50, 0.4)';
@@ -109,27 +146,26 @@ export const Compass = () => {
                         else if (finalScore <= 30) bg = 'rgba(198, 40, 40, 0.3)';
                         else bg = 'rgba(128, 128, 128, 0.2)';
 
-                        const flags = qimen.palaceFlags?.[i];
-                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
-                        const doorName = doorSeg?.label || '';
 
-                        // [Grand Margin Architecture]
-                        // 1. Body Center (Doors/Scores) - Compressed into the inner 28% zone
-                        const bodyMidR = centerRadius + (currentR - centerRadius) * 0.28;
-                        const bodyMidA = (i * 45 + OFFSET_ANGLE + 22.5 - 90) * (Math.PI / 180);
-                        const bx = 50 + bodyMidR * Math.cos(bodyMidA);
-                        const by = 50 + bodyMidR * Math.sin(bodyMidA);
+                        // --- Score Status Logic ---
+                        // Replaced raw score with "Open State Language"
+                        const isOpen = doorSeg?.state?.isOpen || false;
+                        const openLevel = doorSeg?.state?.openLevel || 0;
 
-                        // 2. Glass Band (Outermost 25% of scaled sector)
-                        const bandInnerR = currentR * 0.75;
-                        const bx1 = 50 + bandInnerR * Math.cos(toRad(startA));
-                        const by1 = 50 + bandInnerR * Math.sin(toRad(startA));
-                        const bx2 = 50 + bandInnerR * Math.cos(toRad(endA));
-                        const by2 = 50 + bandInnerR * Math.sin(toRad(endA));
+                        let statusText = "닫힘";
+                        if (isOpen) {
+                            if (openLevel >= 0.8) statusText = "활짝 엶"; // Wide Open
+                            else if (openLevel >= 0.5) statusText = "열림"; // Open
+                            else statusText = "열림(약)"; // Weakly Open
+                        } else {
+                            // Even if closed, show 'Closed' or just empty if very low?
+                            // User wants explicit state.
+                            if (finalScore < 25) statusText = "닫힘";
+                            else statusText = "부족"; // Insufficient
+                        }
 
-                        // --- Dynamic Score Used for Text ---
-                        // (Jitter already applied above)
-                        const scoreStr = settings.scorePrecision === 'high' ? finalScore.toFixed(2) : Math.round(finalScore).toString();
+                        // Use Score for Precision Mode, otherwise Status Text
+                        const scoreStr = settings.scorePrecision === 'high' ? finalScore.toFixed(0) : statusText;
 
                         let scoreColor = '#333';
                         if (finalScore >= 90) scoreColor = '#b39200';
@@ -137,28 +173,41 @@ export const Compass = () => {
                         else if (finalScore >= 60) scoreColor = '#1565c0';
                         else if (finalScore <= 35) scoreColor = '#c62828';
 
+                        // --- H. Body Center Positioning ---
+                        const bodyMidR = centerRadius + (currentR - centerRadius) * 0.28;
+                        const bodyMidA = (i * 45 + OFFSET_ANGLE + 22.5 - 90) * (Math.PI / 180);
+                        const bx = 50 + bodyMidR * Math.cos(bodyMidA);
+                        const by = 50 + bodyMidR * Math.sin(bodyMidA);
+
+
+
                         return (
                             <g key={`sector-layer-${i}`} style={{ filter: flags?.isGongmang ? 'grayscale(0.9) opacity(0.7)' : 'none' }}>
-                                {/* Base Sector */}
+                                {/* 1. Soft Spread (Blurred background) */}
                                 <path
-                                    d={`M ${ix1} ${iy1} L ${ox1} ${oy1} L ${ox2} ${oy2} L ${ix2} ${iy2} Z`}
+                                    d={spreadPath}
                                     fill={bg}
-                                    stroke={flags?.isChung ? 'rgba(255, 0, 0, 0.6)' : 'none'}
-                                    strokeWidth={flags?.isChung ? '1' : '0'}
+                                    filter={isOpen ? "url(#soft-glow)" : "none"}
+                                    opacity={isOpen ? 0.8 : 0.3}
                                 />
-                                {/* Outer Glass Band (rgba 255,255,255,0.5) */}
+
+                                {/* 2. Core Signal Line (Fixed Center) */}
                                 <path
-                                    d={`M ${bx1} ${by1} L ${ox1} ${oy1} L ${ox2} ${oy2} L ${bx2} ${by2} Z`}
-                                    fill="rgba(255, 255, 255, 0.5)"
-                                    stroke="none"
+                                    d={corePath}
+                                    fill={scoreColor}
+                                    opacity={isOpen ? 0.8 : 0.2}
                                 />
-                                {/* Band Inner Boundary Line */}
-                                <path
-                                    d={`M ${bx1} ${by1} A ${bandInnerR} ${bandInnerR} 0 0 1 ${bx2} ${by2}`}
-                                    fill="none"
-                                    stroke="rgba(255, 255, 255, 0.3)"
-                                    strokeWidth="0.3"
+
+                                {/* 3. Precision Divider (Etched Hairline at Section Border) */}
+                                <line
+                                    x1={ix1} y1={iy1} x2={ox1} y2={oy1}
+                                    stroke="rgba(255, 255, 255, 0.25)"
+                                    strokeWidth="0.1"
+                                    pointerEvents="none"
                                 />
+
+                                {/* 4. Outer Glass Band (Removed as per request) */}
+
                                 {flags?.isGongmang && (
                                     <path
                                         d={`M ${ix1} ${iy1} L ${ox1} ${oy1} L ${ox2} ${oy2} L ${ix2} ${iy2} Z`}
@@ -187,7 +236,14 @@ export const Compass = () => {
                                             </g>
                                         );
                                     })()}
-                                    <text x="0" y="2" textAnchor="middle" dominantBaseline="central" fontSize="2.8px" fontWeight="700" fill={scoreColor}>
+
+                                    {/* OPEN HALO (If Open) */}
+                                    {isOpen && (
+                                        <circle cx="0" cy="0" r="5" fill="gold" opacity="0.2" filter="blur(2px)" />
+                                    )}
+
+                                    <text x="0" y="2" textAnchor="middle" dominantBaseline="central" fontSize="2.2px" fontWeight="700"
+                                        fill={scoreColor} opacity={isOpen ? 1 : 0.6}>
                                         {scoreStr}
                                     </text>
                                 </g>
@@ -330,6 +386,6 @@ export const Compass = () => {
             }}>
                 {inspectionMode === 'GPS' ? 'LIVE' : (inspectionMode === 'TargetA' ? 'TARGET A' : 'TARGET B')}
             </div>
-        </div>
+        </div >
     );
 };
