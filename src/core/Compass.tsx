@@ -62,12 +62,15 @@ export const Compass = () => {
                         // DYNAMIC SCORE SYNC
                         // Fetch the EXACT score calculated by the new engine
                         const scoreFromEngine = qimen.sectorScores ? qimen.sectorScores[dirs[i]] : 0;
+                        const agit = qimen.sectorAgitation ? qimen.sectorAgitation[dirs[i]] : { jitter: 1.0, power: 2.5 };
 
                         // --- Dynamic Score Sync (Living Jitter) ---
                         // Calculate jitter FIRST to apply to radius
                         const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
                         const microFactor = (tDate.getMinutes() * 60 + tDate.getSeconds()) / 3600;
-                        const jitter = Math.sin(microFactor * Math.PI * 8 + i) * 2.5;
+
+                        // WuXing Jitter: Frq controlled by agit.jitter, Amp by agit.power
+                        const jitter = Math.sin(microFactor * Math.PI * 8 * agit.jitter + i) * agit.power;
 
                         // Base Total + Jitter
                         // The engine provides the base score (0-100). We just add jitter.
@@ -212,12 +215,13 @@ export const Compass = () => {
                         // DYNAMIC SCORE SYNC
                         // Fetch the EXACT score calculated by the new engine
                         const scoreFromEngine = qimen.sectorScores ? qimen.sectorScores[DIRECTIONS[parentIdx]] : 0;
+                        const agit = qimen.sectorAgitation ? qimen.sectorAgitation[DIRECTIONS[parentIdx]] : { jitter: 1.0, power: 2.5 };
 
                         // Re-calculate Jitter (Needs same tDate reference ideally, but acceptable calc here)
                         // Note: To ensure sync, we replicate the jitter logic
                         const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
                         const microFactor = (tDate.getMinutes() * 60 + tDate.getSeconds()) / 3600;
-                        const jitter = Math.sin(microFactor * Math.PI * 8 + parentIdx) * 2.5; // Use parentIdx for phase
+                        const jitter = Math.sin(microFactor * Math.PI * 8 * agit.jitter + parentIdx) * agit.power;
 
                         // Final Score (Engine + Jitter)
                         let baseTotal = scoreFromEngine;

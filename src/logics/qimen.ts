@@ -154,6 +154,7 @@ export const calculateQimen: LogicFunction = (input: LogicInput) => {
     const starSegments: RingSegment[] = [];
     const palaceFlags: any[] = [];
     const sectorScores: { [key: string]: number } = {};
+    const sectorAgitation: { [key: string]: { jitter: number, power: number } } = {};
 
     DIRECTIONS.forEach((dir, i) => {
         // --- A. Identify Components ---
@@ -263,7 +264,27 @@ export const calculateQimen: LogicFunction = (input: LogicInput) => {
         // Clamp
         sectorScores[dir] = Math.min(100, Math.max(0, dScore));
 
-        // --- D. Visual Segments Setup ---
+        // --- D. WuXing Agitation Calculation ---
+        // Frequency (Agitation): Higher = Faster (Shivering), Lower = Slower (Breathing)
+        // Power (Amplitude): Higher = Deeper, Lower = Shallow
+        let agitation = 1.0; // Base frequency (Breathing)
+        let power = 2.5; // Base amplitude
+
+        if (isChung) agitation += 3.0; // Violent shiver
+        if (reasons.includes('Munbak') || reasons.includes('Gungje')) agitation += 2.0;
+        if (reasons.includes('Fanyin') || reasons.includes('Fuyin')) agitation += 1.5;
+        if (reasons.some(r => r.includes('형') || r.includes('Hyung'))) agitation += 2.5; // Punishment
+
+        if (isGoodDoor) agitation -= 0.2; // Calmer
+        if (reasons.includes('Wang') || reasons.includes('Sang')) {
+            power += 1.5; // Stronger Qi
+            agitation -= 0.1; // Steady
+        }
+        if (dScore < 40) power -= 1.0; // Weak Qi
+
+        sectorAgitation[dir] = { jitter: agitation, power: power };
+
+        // --- E. Visual Segments Setup ---
         // (Existing Logic)
         let pattern: 'gil' | 'hyung' | null = null;
         if (isGoodDoor && !isGongmang && !isChung) pattern = 'gil';
@@ -303,6 +324,7 @@ export const calculateQimen: LogicFunction = (input: LogicInput) => {
             { id: 'stars', order: 2, segments: starSegments }
         ],
         palaceFlags,
-        sectorScores // Return the precise scores
+        sectorScores, // Return the precise scores
+        sectorAgitation // Return animation params
     };
 };

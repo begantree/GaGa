@@ -79,6 +79,7 @@ export interface LogicOutput {
         patternName?: string | null;
     }>;
     sectorScores?: { [key: string]: number }; // Score map for detailed 8-dir analysis
+    sectorAgitation?: { [key: string]: { jitter: number, power: number } }; // UI Agitation params
 }
 
 export type LogicFunction = (input: LogicInput) => LogicOutput;
