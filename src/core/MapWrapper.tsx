@@ -8,6 +8,12 @@ import 'leaflet/dist/leaflet.css';
 // Component to handle map events (Movement)
 const MapEvents = () => {
     const map = useMapEvents({
+        movestart: () => {
+            // User starts interacting -> Revoke Tracking Rights
+            if (useStore.getState().isGPSTracking) {
+                useStore.getState().setGPSTracking(false);
+            }
+        },
         move: () => {
             const center = map.getCenter();
             // Direct store update for lag-free performance
@@ -72,19 +78,27 @@ const TargetMarkers = () => {
     );
 };
 
-// [Fix] Component to programmatically move map when store center changes (e.g. GPS)
-// [Fix] Component to programmatically move map when store center changes (e.g. GPS)
+// [Fix] Component to programmatically move map when store center changes
 const RecenterMap = ({ center, zoom }: { center: { lat: number, lng: number }, zoom: number }) => {
     const map = useMap();
+    const isGPSTracking = useStore(state => state.isGPSTracking);
+
     useEffect(() => {
         const current = map.getCenter();
         const diffLat = Math.abs(current.lat - center.lat);
         const diffLng = Math.abs(current.lng - center.lng);
-        // "FlyTo" for physical feel as requested
-        if (diffLat > 0.00001 || diffLng > 0.00001) {
-            map.flyTo([center.lat, center.lng], zoom, { animate: true, duration: 1.5 });
+
+        // Logical Gate:
+        // 1. If Tracking -> Always follow (TestControls handles smoothing)
+        // 2. If Not Tracking -> Only move if "Teleporting" (Large Jump, e.g. Target Selection)
+        //    Threshold 0.005 deg ~= 500m. Small drifts are ignored.
+        const shouldMove = isGPSTracking || (diffLat > 0.005 || diffLng > 0.005);
+
+        if (shouldMove && (diffLat > 0.000001 || diffLng > 0.000001)) {
+            // Faster animation (0.5s) for tighter adhesion
+            map.flyTo([center.lat, center.lng], zoom, { animate: true, duration: 0.5 });
         }
-    }, [center.lat, center.lng, zoom, map]);
+    }, [center.lat, center.lng, zoom, map, isGPSTracking]);
     return null;
 };
 
