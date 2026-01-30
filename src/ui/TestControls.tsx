@@ -163,7 +163,10 @@ export const TestControls = () => {
 
     // Device Compass Logic
     useEffect(() => {
-        if (!useDeviceCompass) return;
+        if (!useDeviceCompass) {
+            setHeading(0); // Reset to North Up when disabled
+            return;
+        }
         const handleOrientation = (e: DeviceOrientationEvent) => {
             let heading = 0;
             if ((e as any).webkitCompassHeading) heading = (e as any).webkitCompassHeading;
