@@ -280,13 +280,27 @@ export const TestControls = () => {
                     <select value={currentTime.getDate()} onChange={e => { const d = new Date(currentTime); d.setDate(parseInt(e.target.value)); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
                         {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}일</option>)}
                     </select>
-                    {/* Sijin (2-hour block) */}
-                    <select value={Math.floor(currentTime.getHours() / 2)} onChange={e => { const d = new Date(currentTime); d.setHours(parseInt(e.target.value) * 2, 0, 0, 0); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                    {/* Sijin (2-hour block with 30-min offset) */}
+                    <select
+                        value={Math.floor((currentTime.getHours() * 60 + currentTime.getMinutes() + 30) / 120) % 12}
+                        onChange={e => {
+                            const val = parseInt(e.target.value);
+                            const d = new Date(currentTime);
+                            // Set to middle of the block (e.g., Ja(0) -> 00:00, Hae(11) -> 22:00)
+                            // Even hour is safe: 22:00 is inside 21:30~23:29
+                            // Special case: Ja(0) -> 00 is valid (23:30-01:29)
+                            const hour = val === 0 ? 0 : val * 2;
+                            d.setHours(hour, 0, 0, 0);
+                            setCurrentTime(d);
+                            setIsTimeLocked(true);
+                        }}
+                        style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}
+                    >
                         {[
-                            { n: '자시', t: '23-01' }, { n: '축시', t: '01-03' }, { n: '인시', t: '03-05' },
-                            { n: '묘시', t: '05-07' }, { n: '진시', t: '07-09' }, { n: '사시', t: '09-11' },
-                            { n: '오시', t: '11-13' }, { n: '미시', t: '13-15' }, { n: '신시', t: '15-17' },
-                            { n: '유시', t: '17-19' }, { n: '술시', t: '19-21' }, { n: '해시', t: '21-23' }
+                            { n: '자시', t: '23:30~01:29' }, { n: '축시', t: '01:30~03:29' }, { n: '인시', t: '03:30~05:29' },
+                            { n: '묘시', t: '05:30~07:29' }, { n: '진시', t: '07:30~09:29' }, { n: '사시', t: '09:30~11:29' },
+                            { n: '오시', t: '11:30~13:29' }, { n: '미시', t: '13:30~15:29' }, { n: '신시', t: '15:30~17:29' },
+                            { n: '유시', t: '17:30~19:29' }, { n: '술시', t: '19:30~21:29' }, { n: '해시', t: '21:30~23:29' }
                         ].map((s, i) => <option key={i} value={i}>{s.n}({s.t})</option>)}
                     </select>
                 </div>
