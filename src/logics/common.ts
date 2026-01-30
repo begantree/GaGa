@@ -19,12 +19,8 @@ export const DOOR_NAMES_HANJA = ['開', '休', '生', '傷', '杜', '景', '死'
 
 export const BRANCHES = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
 
-export const STEM_COMBOS: { [key: string]: string } = {
-    '0,2': '청룡회명', // 甲 + 丙
-    '2,0': '비조질혈', // 丙 + 甲
-    '1,2': '화소초로', // 乙 + 丙
-    '3,1': '옥녀수문', // 丁 + 乙
-};
+// [Migrated to qimen.ts] Logic Constants (Combos, Elements, Hap, Chung, Prod, Dest) have been moved to qimen.ts
+// effectively making this file lighter.
 export const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 
 export const PALACE_NAMES_KR = ['감', '간', '진', '손', '리', '곤', '태', '건'];
@@ -48,15 +44,7 @@ export const MOUNTAIN_24 = [
     '술', '건', '해'
 ];
 
-export const PALACE_BRANCHES: { [key: string]: number[] } = {
-    'N': [0], 'NE': [1, 2], 'E': [3], 'SE': [4, 5],
-    'S': [6], 'SW': [7, 8], 'W': [9], 'NW': [10, 11]
-};
-
-export const PALACE_ELEMENTS: { [key: string]: string } = {
-    'N': 'Water', 'NE': 'Earth', 'E': 'Wood', 'SE': 'Wood',
-    'S': 'Fire', 'SW': 'Earth', 'W': 'Metal', 'NW': 'Metal'
-};
+// PALACE maps migrated to qimen.ts
 
 export const STEM_ELEMENTS: { [key: string]: string } = {
     'Jia': 'Wood', 'Yi': 'Wood', 'Bing': 'Fire', 'Ding': 'Fire', 'Wu': 'Earth', 'Ji': 'Earth',
@@ -75,8 +63,7 @@ export const NINE_STARS = [
     { name: 'star_ying', displayName: '천영', element: 'Fire' }
 ];
 
-export const PROD: { [key: string]: string } = { 'Water': 'Wood', 'Wood': 'Fire', 'Fire': 'Earth', 'Earth': 'Metal', 'Metal': 'Water' };
-export const DEST: { [key: string]: string } = { 'Water': 'Fire', 'Fire': 'Metal', 'Metal': 'Wood', 'Wood': 'Earth', 'Earth': 'Water' };
+// PROD and DEST migrated to qimen.ts
 
 // ==========================================
 // 2. Helper Functions
@@ -139,3 +126,5 @@ export const getGongmang = (stemIdx: number, branchIdx: number): number[] => {
     };
     return map[diff] || [];
 };
+
+// MasterScorer Helpers have been migrated to qimen.ts

@@ -58,8 +58,11 @@ export const Compass = () => {
                         const toRad = (deg: number) => (deg - 90) * Math.PI / 180;
 
                         const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-                        const mScore = myeongri.debugScore ? myeongri.debugScore[dirs[i]] : 0;
-                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
+
+                        // DYNAMIC SCORE SYNC
+                        // Fetch the EXACT score calculated by the new engine
+                        const scoreFromEngine = qimen.sectorScores ? qimen.sectorScores[dirs[i]] : 0;
+
                         // --- Dynamic Score Sync (Living Jitter) ---
                         // Calculate jitter FIRST to apply to radius
                         const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
@@ -67,8 +70,8 @@ export const Compass = () => {
                         const jitter = Math.sin(microFactor * Math.PI * 8 + i) * 2.5;
 
                         // Base Total + Jitter
-                        let baseTotal = 50 + mScore * 2;
-                        if (doorSeg?.isAus) baseTotal += 20;
+                        // The engine provides the base score (0-100). We just add jitter.
+                        let baseTotal = scoreFromEngine;
 
                         // Final Score for Scaling (Clamped 0-100)
                         const finalScore = Math.min(100, Math.max(0, baseTotal + jitter));
@@ -104,6 +107,7 @@ export const Compass = () => {
                         else bg = 'rgba(128, 128, 128, 0.2)';
 
                         const flags = qimen.palaceFlags?.[i];
+                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
                         const doorName = doorSeg?.label || '';
 
                         // [Grand Margin Architecture]
@@ -205,18 +209,18 @@ export const Compass = () => {
                         const toRad = (deg: number) => (deg - 90) * Math.PI / 180;
 
                         // Dynamic Radius Logic (Inherited from Parent Sector)
-                        const mScore = myeongri.debugScore ? myeongri.debugScore[DIRECTIONS[parentIdx]] : 0;
-                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === parentIdx * 45);
-                        // Piecewise Scaling Logic (Matching Base Sectors)
+                        // DYNAMIC SCORE SYNC
+                        // Fetch the EXACT score calculated by the new engine
+                        const scoreFromEngine = qimen.sectorScores ? qimen.sectorScores[DIRECTIONS[parentIdx]] : 0;
+
                         // Re-calculate Jitter (Needs same tDate reference ideally, but acceptable calc here)
                         // Note: To ensure sync, we replicate the jitter logic
                         const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
                         const microFactor = (tDate.getMinutes() * 60 + tDate.getSeconds()) / 3600;
                         const jitter = Math.sin(microFactor * Math.PI * 8 + parentIdx) * 2.5; // Use parentIdx for phase
 
-                        let baseTotal = 50 + mScore * 2;
-                        if (doorSeg?.isAus) baseTotal += 20;
-
+                        // Final Score (Engine + Jitter)
+                        let baseTotal = scoreFromEngine;
                         const finalScore = Math.min(100, Math.max(0, baseTotal + jitter));
                         let scaling = 1.0;
                         if (finalScore >= 60) {

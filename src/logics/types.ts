@@ -78,6 +78,7 @@ export interface LogicOutput {
         pattern: 'gil' | 'hyung' | null;
         patternName?: string | null;
     }>;
+    sectorScores?: { [key: string]: number }; // Score map for detailed 8-dir analysis
 }
 
 export type LogicFunction = (input: LogicInput) => LogicOutput;
