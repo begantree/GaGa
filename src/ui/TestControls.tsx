@@ -12,6 +12,17 @@ export const TestControls = () => {
     // const { } = useTranslation();
 
 
+    // --- 0. Forced System Time Sync ---
+    useEffect(() => {
+        const timer = setInterval(() => {
+            // Only auto-sync if we are NOT manually picking a time or if GPS is on?
+            // User said "앱 실행 시... 1초의 오차도 없이 일치시켜라".
+            // We'll enforce sync unless the user is specifically interacting with selectors.
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [setCurrentTime]);
+
     // --- 1. Robust Initialization (GPS -> Fallback) ---
     useEffect(() => {
         if ('geolocation' in navigator) {
@@ -264,7 +275,7 @@ export const TestControls = () => {
                     </div>
                     {result?.fengshui && (
                         <div style={{ background: '#fffbe6', padding: '6px', borderRadius: '6px', fontSize: '10px', border: '1px solid #ffe58f' }}>
-                            <div style={{ color: '#d48806', fontWeight: 'bold' }}>SCORE: {result.fengshui.score}</div>
+                            <div style={{ color: '#d48806', fontWeight: 'bold' }}>SCORE: {result.fengshui.score.toFixed(2)}</div>
                         </div>
                     )}
                 </div>

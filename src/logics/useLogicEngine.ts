@@ -4,6 +4,7 @@ import { calculateQimen } from './qimen';
 import { calculateMyeongri } from './myeongri';
 import { calculateFengShui } from './fengshui';
 import { calculateSolarTime } from './solarTime';
+import { BRANCHES } from './common';
 import type { LogicInput } from './types';
 
 export const useLogicEngine = () => {
@@ -66,9 +67,20 @@ export const useLogicEngine = () => {
     const heading = useStore((state) => state.heading);
 
     const fengshui = useMemo(() => {
-        const magHeading = heading - 8.5; // Apply Declination
-        return calculateFengShui(magHeading);
-    }, [heading]);
+        const hourIdx = Math.floor((solarTimeResult.trueSolarTime.getHours() + 1) / 2) % 12;
+        const hourBranch = BRANCHES[hourIdx];
+
+        // --- REAL-TIME SCORE JITTER (Yodong Logic) ---
+        // Add tiny fluctuation every second to make it feel "Alive"
+        const sec = solarTimeResult.trueSolarTime.getSeconds() + solarTimeResult.trueSolarTime.getMilliseconds() / 1000;
+        const jitter = Math.sin(sec * Math.PI) * 0.82; // +/- 0.82 drift
+
+        const rawFs = calculateFengShui(heading - 8.5, undefined, hourBranch);
+        return {
+            ...rawFs,
+            score: Number((rawFs.score + jitter).toFixed(2))
+        };
+    }, [heading, solarTimeResult.trueSolarTime]);
 
     return {
         result: {

@@ -56,7 +56,8 @@ export const Compass = () => {
     const heading = useStore((state) => state.heading);
     const isInputtingUser = useStore((state) => state.isInputtingUser);
     const inspectionMode = useStore((state) => state.inspectionMode);
-    const { result } = useLogicEngine();
+    const currentTime = useStore((state) => state.currentTime);
+    const { result, solarData } = useLogicEngine();
 
     if (isInputtingUser) {
         return (
@@ -125,7 +126,7 @@ export const Compass = () => {
                         const ix2 = 50 + centerRadius * Math.cos(toRad(endA));
                         const iy2 = 50 + centerRadius * Math.sin(toRad(endA));
 
-                        // Color Logic
+                        // 5-Color Logic (Vivid Stage)
                         const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
                         const mScore = myeongri.debugScore ? myeongri.debugScore[dirs[i]] : 0;
                         const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
@@ -133,12 +134,14 @@ export const Compass = () => {
                         let total = 50 + mScore * 2;
                         if (isQimenAus) total += 20;
                         if (total > 100) total = 100;
+                        if (total < 0) total = 0;
 
                         let bg;
-                        if (total >= 90) { bg = 'rgba(255, 215, 0, 0.45)'; }
-                        else if (total >= 70) { bg = 'rgba(30, 144, 255, 0.25)'; }
-                        else if (total >= 40) { bg = 'rgba(144, 238, 144, 0.2)'; }
-                        else { bg = 'rgba(128, 128, 128, 0.15)'; }
+                        if (total >= 90) { bg = 'rgba(255, 215, 0, 0.45)'; } // Gold
+                        else if (total >= 75) { bg = 'rgba(46, 125, 50, 0.4)'; } // Green
+                        else if (total >= 60) { bg = 'rgba(21, 101, 192, 0.35)'; } // Blue
+                        else if (total <= 30) { bg = 'rgba(198, 40, 40, 0.3)'; } // Red
+                        else { bg = 'rgba(128, 128, 128, 0.2)'; } // Grey
 
                         return (
                             <path
@@ -161,6 +164,46 @@ export const Compass = () => {
                         const oy = 50 + 49 * Math.sin(toRad(angle));
                         // Changed to Lighter Blue and matched opacity
                         return <line key={`line-${i}`} x1={ix} y1={iy} x2={ox} y2={oy} stroke="rgba(0, 100, 255, 0.6)" strokeWidth="0.5" />;
+                    })}
+
+                    {/* 2b. Surgical Score Labels (Inside Sectors) */}
+                    {[...Array(8)].map((_, i) => {
+                        const midAngle = i * 45;
+                        const rad = (midAngle + OFFSET_ANGLE + 22.5 - 90) * (Math.PI / 180);
+                        const r = 32; // Centered within the sector area
+                        const x = 50 + r * Math.cos(rad);
+                        const y = 50 + r * Math.sin(rad);
+
+                        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                        const mScore = myeongri.debugScore ? myeongri.debugScore[dirs[i]] : 0;
+                        const doorSeg = qimen.rings.find(r => r.id === 'doors')?.segments.find(s => s.angleStart === i * 45);
+
+                        // --- DYNAMIC ENERGY CALCULATION (Real-time yodong) ---
+                        // Use True Solar Minutes/Seconds for micro-fluctuation (0.00 ~ 5.00 range)
+                        const tDate = (result.myeongri as any).dayStem ? (solarData.trueSolarTime || currentTime) : currentTime;
+                        const microFactor = (tDate.getMinutes() * 60 + tDate.getSeconds()) / 3600;
+                        const jitter = Math.sin(microFactor * Math.PI * 8 + i) * 2.5; // Oscillates 2.5 pts based on time + sector index
+
+                        let total = 50 + mScore * 2 + jitter;
+                        if (doorSeg?.isAus) total += 20;
+                        if (total > 100) total = 100;
+                        if (total < 0) total = 0;
+
+                        // Score-based Text Color
+                        let scoreColor = '#333'; // Default Grey
+                        if (total >= 90) scoreColor = '#b39200'; // Gold
+                        else if (total >= 75) scoreColor = '#2e7d32'; // Green
+                        else if (total >= 60) scoreColor = '#1565c0'; // Blue
+                        else if (total <= 35) scoreColor = '#c62828'; // Red
+
+                        return (
+                            <g key={`score-${i}`} transform={`rotate(${-totalRotation}, ${x}, ${y})`}>
+                                <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="3px" fontWeight="900"
+                                    fill={scoreColor} style={{ textShadow: '0 0 1.5px white, 0 0 1.5px white' }}>
+                                    {total.toFixed(2)}
+                                </text>
+                            </g>
+                        );
                     })}
 
                     {/* 3. Cardinal Text */}
