@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { useLogicEngine } from '../logics/useLogicEngine';
-import { MapPin, Navigation, RefreshCw, Lock, List, Trash2, User, X } from 'lucide-react';
+import { MapPin, Navigation, RefreshCw, Lock, List, Trash2, User, X, Hash } from 'lucide-react';
 
 export const TestControls = () => {
     // Unused: setting, updateSettings
-    const { center, gpsPosition, currentTime, setHeading, setCenter, setGpsPosition, setCurrentTime, users, activeUserId, addUser, removeUser, setActiveUser, setIsInputtingUser, isGPSTracking, setGPSTracking, isScaleLocked, setScaleLocked } = useStore();
+    const { center, gpsPosition, currentTime, setHeading, setCenter, setGpsPosition, setCurrentTime, users, activeUserId, addUser, removeUser, setActiveUser, setIsInputtingUser, isGPSTracking, setGPSTracking, isScaleLocked, setScaleLocked, settings, updateSettings } = useStore();
     const { solarData, result } = useLogicEngine(); // Get entire result 
+
+    const [isTimeLocked, setIsTimeLocked] = useState(false);
 
     // Unused: languageMode
     // const { } = useTranslation();
@@ -14,14 +16,13 @@ export const TestControls = () => {
 
     // --- 0. Forced System Time Sync ---
     useEffect(() => {
+        if (isTimeLocked) return; // Skip sync if manual override is active
+
         const timer = setInterval(() => {
-            // Only auto-sync if we are NOT manually picking a time or if GPS is on?
-            // User said "앱 실행 시... 1초의 오차도 없이 일치시켜라".
-            // We'll enforce sync unless the user is specifically interacting with selectors.
             setCurrentTime(new Date());
         }, 1000);
         return () => clearInterval(timer);
-    }, [setCurrentTime]);
+    }, [setCurrentTime, isTimeLocked]);
 
     // --- 1. Robust Initialization (GPS -> Fallback) ---
     useEffect(() => {
@@ -231,7 +232,18 @@ export const TestControls = () => {
             <div style={{ padding: '10px 15px 5px 15px', borderBottom: '1px solid #eee', background: '#fff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>Universal Engine</h3>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {isTimeLocked && (
+                            <button
+                                onClick={() => { setIsTimeLocked(false); setCurrentTime(new Date()); }}
+                                style={{
+                                    fontSize: '9px', padding: '4px 8px', borderRadius: '12px',
+                                    background: '#333', color: '#fff', border: 'none', fontWeight: 'bold'
+                                }}
+                            >
+                                현재 시간으로
+                            </button>
+                        )}
                         {/* GPS */}
                         <button onClick={handleGPS} style={{ padding: '4px', borderRadius: '4px', border: isGPSTracking ? '1px solid green' : '1px solid #ddd', background: isGPSTracking ? '#e8f5e9' : 'white' }}>
                             <Navigation size={14} color={isGPSTracking ? 'green' : '#666'} />
@@ -244,24 +256,35 @@ export const TestControls = () => {
                         <button onClick={() => setScaleLocked(!isScaleLocked)} style={{ padding: '4px', borderRadius: '4px', border: isScaleLocked ? '1px solid red' : '1px solid #ddd', background: isScaleLocked ? '#ffebee' : 'white' }}>
                             <Lock size={14} color={isScaleLocked ? 'red' : '#666'} />
                         </button>
+                        {/* Rounding Toggle */}
+                        <button
+                            onClick={() => updateSettings({ scorePrecision: settings.scorePrecision === 'high' ? 'low' : 'high' })}
+                            style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ddd', background: settings.scorePrecision === 'low' ? '#f0f0f0' : 'white' }}
+                        >
+                            <Hash size={14} color={settings.scorePrecision === 'low' ? '#333' : '#666'} />
+                        </button>
                     </div>
                 </div>
 
-                {/* 2. Independent Time Selectors (Current Time) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginBottom: '8px' }}>
                     {/* Year */}
-                    <input type="number" value={currentTime.getFullYear()} onChange={e => { const d = new Date(currentTime); d.setFullYear(parseInt(e.target.value)); setCurrentTime(d); }} style={{ width: '100%', fontSize: '11px', padding: '4px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }} />
+                    <input type="number" value={currentTime.getFullYear()} onChange={e => { const d = new Date(currentTime); d.setFullYear(parseInt(e.target.value)); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '4px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }} />
                     {/* Month */}
-                    <select value={currentTime.getMonth()} onChange={e => { const d = new Date(currentTime); d.setMonth(parseInt(e.target.value)); setCurrentTime(d); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                    <select value={currentTime.getMonth()} onChange={e => { const d = new Date(currentTime); d.setMonth(parseInt(e.target.value)); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
                         {Array.from({ length: 12 }, (_, i) => i).map(m => <option key={m} value={m}>{m + 1}월</option>)}
                     </select>
                     {/* Day */}
-                    <select value={currentTime.getDate()} onChange={e => { const d = new Date(currentTime); d.setDate(parseInt(e.target.value)); setCurrentTime(d); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                    <select value={currentTime.getDate()} onChange={e => { const d = new Date(currentTime); d.setDate(parseInt(e.target.value)); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
                         {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}일</option>)}
                     </select>
                     {/* Sijin (2-hour block) */}
-                    <select value={Math.floor(currentTime.getHours() / 2)} onChange={e => { const d = new Date(currentTime); d.setHours(parseInt(e.target.value) * 2, 0, 0, 0); setCurrentTime(d); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
-                        {['자시', '축시', '인시', '묘시', '진시', '사시', '오시', '미시', '신시', '유시', '술시', '해시'].map((s, i) => <option key={i} value={i}>{s}</option>)}
+                    <select value={Math.floor(currentTime.getHours() / 2)} onChange={e => { const d = new Date(currentTime); d.setHours(parseInt(e.target.value) * 2, 0, 0, 0); setCurrentTime(d); setIsTimeLocked(true); }} style={{ width: '100%', fontSize: '11px', padding: '0px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}>
+                        {[
+                            { n: '자시', t: '23-01' }, { n: '축시', t: '01-03' }, { n: '인시', t: '03-05' },
+                            { n: '묘시', t: '05-07' }, { n: '진시', t: '07-09' }, { n: '사시', t: '09-11' },
+                            { n: '오시', t: '11-13' }, { n: '미시', t: '13-15' }, { n: '신시', t: '15-17' },
+                            { n: '유시', t: '17-19' }, { n: '술시', t: '19-21' }, { n: '해시', t: '21-23' }
+                        ].map((s, i) => <option key={i} value={i}>{s.n}({s.t})</option>)}
                     </select>
                 </div>
             </div>

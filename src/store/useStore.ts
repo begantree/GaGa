@@ -62,6 +62,7 @@ export const useStore = create<AppState>((set) => ({
     useTrueSolarTime: true,
     useMagneticNorth: false,
     languageMode: 'KOR',
+    scorePrecision: 'high', // Added scorePrecision with a default value
     layers: {
       'doors': { opacity: 1, visible: true },
       'stars': { opacity: 1, visible: true },

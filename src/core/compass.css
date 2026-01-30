@@ -3,9 +3,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 80vmin;
-    /* Scale to 80% of smaller screen dimension */
-    height: 80vmin;
+    width: 90vmin;
+    /* Scale to 90% of smaller screen dimension */
+    height: 90vmin;
     z-index: 450;
     /* As requested: above map (200-400), below UI */
     pointer-events: none;

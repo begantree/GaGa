@@ -26,6 +26,7 @@ export interface LogicSettings {
     useTrueSolarTime: boolean; // Correct time based on longitude
     useMagneticNorth: boolean; // Use magnetic declination
     languageMode: 'KOR' | 'CHN' | 'ENG' | 'MIX';
+    scorePrecision: 'high' | 'low';
     layers: { [id: string]: LayerConfig }; // Dynamic layer settings
 }
 
@@ -70,6 +71,13 @@ export interface LogicOutput {
     rings: RingLayer[]; // Visual data for rings
     debugScore?: { [key: string]: number }; // Optional score map for visualization
     fengshui?: FengShuiOutput; // New Feng Shui data
+    palaceFlags?: Array<{
+        dir: string;
+        isGongmang: boolean;
+        isChung: boolean;
+        pattern: 'gil' | 'hyung' | null;
+        patternName?: string | null;
+    }>;
 }
 
 export type LogicFunction = (input: LogicInput) => LogicOutput;
