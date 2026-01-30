@@ -201,8 +201,8 @@ export const Compass = () => {
                                 {/* 3. Precision Divider (Etched Hairline at Section Border) */}
                                 <line
                                     x1={ix1} y1={iy1} x2={ox1} y2={oy1}
-                                    stroke="rgba(255, 255, 255, 0.25)"
-                                    strokeWidth="0.1"
+                                    stroke="rgba(255, 255, 255, 0.6)"
+                                    strokeWidth="0.5"
                                     pointerEvents="none"
                                 />
 
