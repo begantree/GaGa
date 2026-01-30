@@ -94,10 +94,10 @@
 /* Open Door Focus Message */
 .open-door-notice {
     position: absolute;
-    top: 50px;
-    /* Below Top controls */
+    top: -10px;
+    /* Above compass area */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -100%);
     background: rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -111,19 +111,19 @@
     white-space: nowrap;
     z-index: 1002;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    animation: fadeInSlideDown 0.4s ease-out;
+    animation: fadeInSlideUp 0.4s ease-out;
     letter-spacing: -0.02em;
     pointer-events: none;
 }
 
-@keyframes fadeInSlideDown {
+@keyframes fadeInSlideUp {
     from {
         opacity: 0;
-        transform: translate(-50%, -10px);
+        transform: translate(-50%, -80%);
     }
 
     to {
         opacity: 1;
-        transform: translate(-50%, 0);
+        transform: translate(-50%, -100%);
     }
 }

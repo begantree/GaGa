@@ -45,7 +45,7 @@ export const Compass = () => {
 
     // --- Dynamic Center Radius Calculation ---
     const rawName = (myeongri.summary || 'Guest').split('(')[0].replace('User: ', '').replace('Guest Mode', 'Guest');
-    const centerRadius = Math.max(6, (6 + rawName.length * 1.5) * 0.7);
+    const centerRadius = Math.max(5, (6 + rawName.length * 1.5) * 0.7 * 0.8);
     const baseOuterR = 34; // Slightly larger base for clearer margins
 
     return (
@@ -202,7 +202,7 @@ export const Compass = () => {
                                 <line
                                     x1={ix1} y1={iy1} x2={ox1} y2={oy1}
                                     stroke="rgba(255, 255, 255, 0.6)"
-                                    strokeWidth="0.5"
+                                    strokeWidth="0.4"
                                     pointerEvents="none"
                                 />
 
